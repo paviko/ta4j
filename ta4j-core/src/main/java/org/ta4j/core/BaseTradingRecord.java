@@ -49,28 +49,28 @@ public class BaseTradingRecord implements TradingRecord {
     private final Integer endIndex;
 
     /** The recorded trades. */
-    private final List<Trade> trades = new ArrayList<>();
+    protected final List<Trade> trades = new ArrayList<>();
 
     /** The recorded BUY trades. */
-    private final List<Trade> buyTrades = new ArrayList<>();
+    protected final List<Trade> buyTrades = new ArrayList<>();
 
     /** The recorded SELL trades. */
-    private final List<Trade> sellTrades = new ArrayList<>();
+    protected final List<Trade> sellTrades = new ArrayList<>();
 
     /** The recorded entry trades. */
-    private final List<Trade> entryTrades = new ArrayList<>();
+    protected final List<Trade> entryTrades = new ArrayList<>();
 
     /** The recorded exit trades. */
-    private final List<Trade> exitTrades = new ArrayList<>();
+    protected final List<Trade> exitTrades = new ArrayList<>();
 
     /** The entry type (BUY or SELL) in the trading session. */
     private final TradeType startingType;
 
     /** The recorded positions. */
-    private final List<Position> positions = new ArrayList<>();
+    protected final List<Position> positions = new ArrayList<>();
 
     /** The current non-closed position (there's always one). */
-    private Position currentPosition;
+    protected Position currentPosition;
 
     /** The cost model for transactions of the asset. */
     private final transient CostModel transactionCostModel;
@@ -301,7 +301,7 @@ public class BaseTradingRecord implements TradingRecord {
      * @param isEntry true if the trade is an entry, false otherwise (exit)
      * @throws NullPointerException if trade is null
      */
-    private void recordTrade(Trade trade, boolean isEntry) {
+    protected void recordTrade(Trade trade, boolean isEntry) {
         Objects.requireNonNull(trade, "Trade should not be null");
 
         // Storing the new trade in entries/exits lists
