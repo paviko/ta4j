@@ -27,6 +27,7 @@ import static org.ta4j.core.num.NaN.NaN;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.ta4j.core.Trade.TradeType;
 import org.ta4j.core.analysis.cost.CostModel;
@@ -46,6 +47,8 @@ import org.ta4j.core.num.Num;
 public class Position implements Serializable {
 
     private static final long serialVersionUID = -5484709075767220358L;
+    private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
+    private final long id;
 
     /** The entry trade */
     private Trade entry;
@@ -89,6 +92,7 @@ public class Position implements Serializable {
         if (startingType == null) {
             throw new IllegalArgumentException("Starting type must not be null");
         }
+        this.id = ID_GENERATOR.getAndIncrement();
         this.startingType = startingType;
         this.transactionCostModel = transactionCostModel;
         this.holdingCostModel = holdingCostModel;
@@ -123,6 +127,7 @@ public class Position implements Serializable {
             throw new IllegalArgumentException("Trades and the position must incorporate the same trading cost model");
         }
 
+        this.id = ID_GENERATOR.getAndIncrement();
         this.startingType = entry.getType();
         this.entry = entry;
         this.exit = exit;
@@ -144,19 +149,28 @@ public class Position implements Serializable {
         return exit;
     }
 
+    /**
+     * Gets the unique ID of this position.
+     *
+     * @return the position ID
+     */
+    public long getId() {
+        return id;
+    }
+
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Position) {
-            Position p = (Position) obj;
-            return (entry == null ? p.getEntry() == null : entry.equals(p.getEntry()))
-                    && (exit == null ? p.getExit() == null : exit.equals(p.getExit()));
-        }
-        return false;
+        if (this == obj) return true;
+        if (!(obj instanceof Position)) return false;
+        Position p = (Position) obj;
+        return id == p.id &&
+               Objects.equals(entry, p.entry) &&
+               Objects.equals(exit, p.exit);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(entry, exit);
+        return Objects.hash(id, entry, exit);
     }
 
     /**
@@ -425,6 +439,6 @@ public class Position implements Serializable {
 
     @Override
     public String toString() {
-        return "Entry: " + entry + " exit: " + exit;
+        return String.format("Position[%d] Entry: %s Exit: %s", id, entry, exit);
     }
 }
