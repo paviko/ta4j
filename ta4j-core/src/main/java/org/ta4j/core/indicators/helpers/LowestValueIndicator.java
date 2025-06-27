@@ -23,6 +23,9 @@
  */
 package org.ta4j.core.indicators.helpers;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import org.ta4j.core.Indicator;
 import org.ta4j.core.indicators.CachedIndicator;
 import org.ta4j.core.num.Num;
@@ -37,6 +40,11 @@ public class LowestValueIndicator extends CachedIndicator<Num> {
 
     private final Indicator<Num> indicator;
     private final int barCount;
+    
+    // Monotonic deque for efficient sliding window minimum
+    // Stores indices in increasing order of their values
+    private final Deque<Integer> minDeque = new ArrayDeque<>();
+    private int lastProcessedIndex = -1;
 
     /**
      * Constructor.
@@ -52,17 +60,82 @@ public class LowestValueIndicator extends CachedIndicator<Num> {
 
     @Override
     protected Num calculate(int index) {
+        // Handle NaN case with recursive fallback (preserve original behavior)
         if (indicator.getValue(index).isNaN() && barCount != 1) {
             return new LowestValueIndicator(indicator, barCount - 1).getValue(index - 1);
         }
+        
+        // Check if this is sequential access from the last processed index
+        if (index == lastProcessedIndex + 1 && !minDeque.isEmpty()) {
+            // Sequential access: use optimized sliding window approach
+            return calculateOptimized(index);
+        } else {
+            // Non-sequential access or first calculation: use simple approach and prepare for optimization
+            return calculateSimpleAndPrepareOptimization(index);
+        }
+    }
+    
+    /**
+     * Simple O(k) calculation for non-sequential access, but prepares deque for future optimization
+     */
+    private Num calculateSimpleAndPrepareOptimization(int index) {
         int end = Math.max(0, index - barCount + 1);
         Num lowest = indicator.getValue(index);
         for (int i = index - 1; i >= end; i--) {
-            if (lowest.isGreaterThan(indicator.getValue(i))) {
-                lowest = indicator.getValue(i);
+            Num value = indicator.getValue(i);
+            if (!value.isNaN() && (lowest.isNaN() || lowest.isGreaterThan(value))) {
+                lowest = value;
             }
         }
+        
+        // Prepare deque for potential future sequential access
+        // Build the deque state for the current window
+        minDeque.clear();
+        for (int i = end; i <= index; i++) {
+            Num value = indicator.getValue(i);
+            if (!value.isNaN()) {
+                // Remove indices whose values are greater than current value
+                while (!minDeque.isEmpty() && 
+                       indicator.getValue(minDeque.peekLast()).isGreaterThan(value)) {
+                    minDeque.pollLast();
+                }
+                minDeque.offerLast(i);
+            }
+        }
+        
+        lastProcessedIndex = index;
         return lowest;
+    }
+    
+    /**
+     * Optimized O(1) amortized calculation for sequential access using monotonic deque
+     */
+    private Num calculateOptimized(int index) {
+        // Remove indices that are outside the current window
+        while (!minDeque.isEmpty() && minDeque.peekFirst() < index - barCount + 1) {
+            minDeque.pollFirst();
+        }
+        
+        // Remove indices whose values are greater than current value
+        // (they can never be minimum while current value is in window)
+        Num currentValue = indicator.getValue(index);
+        if (!currentValue.isNaN()) {
+            while (!minDeque.isEmpty() && 
+                   indicator.getValue(minDeque.peekLast()).isGreaterThan(currentValue)) {
+                minDeque.pollLast();
+            }
+            minDeque.offerLast(index);
+        }
+        
+        lastProcessedIndex = index;
+        
+        // The front of deque contains the index of minimum value in current window
+        if (!minDeque.isEmpty()) {
+            return indicator.getValue(minDeque.peekFirst());
+        } else {
+            // All values in window are NaN
+            return currentValue; // which is NaN
+        }
     }
 
     /** @return {@link #barCount} */
