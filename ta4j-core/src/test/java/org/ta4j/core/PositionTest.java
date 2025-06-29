@@ -145,16 +145,16 @@ public class PositionTest {
 
     @Test
     public void overrideToString() {
-        assertEquals(posEquals1.toString(), posEquals2.toString());
-        assertNotEquals(posEquals1.toString(), posNotEquals1.toString());
-        assertNotEquals(posEquals1.toString(), posNotEquals2.toString());
+        assertEquals(posEquals1.toStringWithoutId(), posEquals2.toStringWithoutId());
+        assertNotEquals(posEquals1.toStringWithoutId(), posNotEquals1.toStringWithoutId());
+        assertNotEquals(posEquals1.toStringWithoutId(), posNotEquals2.toStringWithoutId());
     }
 
     @Test
     public void testEqualsForNewPositions() {
-        assertEquals(newPosition, new Position());
-        assertNotEquals(newPosition, new Object());
-        assertNotEquals(newPosition, null);
+        assertTrue(newPosition.equalsWithoutId(new Position()));
+        assertFalse(newPosition.equalsWithoutId(new Object()));
+        assertFalse(newPosition.equalsWithoutId(null));
     }
 
     @Test
@@ -164,13 +164,13 @@ public class PositionTest {
         Position trRightNotEquals = new Position();
 
         assertEquals(TradeType.BUY, trRightNotEquals.operate(2).getType());
-        assertNotEquals(trLeft, trRightNotEquals);
+        assertFalse(trLeft.equalsWithoutId(trRightNotEquals));
 
         assertEquals(TradeType.BUY, trLeft.operate(1).getType());
         assertEquals(TradeType.BUY, trRightEquals.operate(1).getType());
-        assertEquals(trLeft, trRightEquals);
+        assertTrue(trLeft.equalsWithoutId(trRightEquals));
 
-        assertNotEquals(trLeft, trRightNotEquals);
+        assertFalse(trLeft.equalsWithoutId(trRightNotEquals));
     }
 
     @Test
@@ -184,13 +184,13 @@ public class PositionTest {
         assertEquals(TradeType.BUY, trRightNotEquals.operate(1).getType());
 
         assertEquals(TradeType.SELL, trRightNotEquals.operate(3).getType());
-        assertNotEquals(trLeft, trRightNotEquals);
+        assertFalse(trLeft.equalsWithoutId(trRightNotEquals));
 
         assertEquals(TradeType.SELL, trLeft.operate(2).getType());
         assertEquals(TradeType.SELL, trRightEquals.operate(2).getType());
-        assertEquals(trLeft, trRightEquals);
+        assertTrue(trLeft.equalsWithoutId(trRightEquals));
 
-        assertNotEquals(trLeft, trRightNotEquals);
+        assertFalse(trLeft.equalsWithoutId(trRightNotEquals));
     }
 
     @Test

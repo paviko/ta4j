@@ -174,6 +174,32 @@ public class Position implements Serializable {
     }
 
     /**
+     * Compares this position with another position based on logical content (entry, exit, starting type)
+     * without considering the unique ID.
+     *
+     * @param obj the object to compare with
+     * @return true if the positions are logically equivalent, false otherwise
+     */
+    public boolean equalsWithoutId(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Position)) return false;
+        Position p = (Position) obj;
+        return Objects.equals(startingType, p.startingType) &&
+               Objects.equals(entry, p.entry) &&
+               Objects.equals(exit, p.exit);
+    }
+
+    /**
+     * Returns a hash code for this position based on logical content (entry, exit, starting type)
+     * without considering the unique ID.
+     *
+     * @return the hash code based on logical content
+     */
+    public int hashCodeWithoutId() {
+        return Objects.hash(startingType, entry, exit);
+    }
+
+    /**
      * Operates the position at the index-th position.
      *
      * @param index the bar index
@@ -440,5 +466,14 @@ public class Position implements Serializable {
     @Override
     public String toString() {
         return String.format("Position[%d] Entry: %s Exit: %s", id, entry, exit);
+    }
+
+    /**
+     * Returns a string representation of this position without the unique ID.
+     *
+     * @return string representation without ID
+     */
+    public String toStringWithoutId() {
+        return String.format("Position Entry: %s Exit: %s", entry, exit);
     }
 }

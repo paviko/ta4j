@@ -36,6 +36,13 @@ public class TradingRecordTest {
 
     private TradingRecord emptyRecord, openedRecord, closedRecord;
 
+    /**
+     * Helper method to assert that two positions are logically equal (ignoring ID).
+     */
+    private void assertPositionsEqual(Position expected, Position actual) {
+        assertTrue("Positions should be logically equal", expected.equalsWithoutId(actual));
+    }
+
     @Before
     public void setUp() {
         emptyRecord = new BaseTradingRecord();
@@ -69,7 +76,7 @@ public class TradingRecordTest {
         record.operate(3);
         assertTrue(record.getCurrentPosition().isNew());
         assertEquals(1, record.getPositionCount());
-        assertEquals(new Position(Trade.buyAt(1, NaN, NaN), Trade.sellAt(3, NaN, NaN)), record.getLastPosition());
+        assertPositionsEqual(new Position(Trade.buyAt(1, NaN, NaN), Trade.sellAt(3, NaN, NaN)), record.getLastPosition());
         assertEquals(Trade.sellAt(3, NaN, NaN), record.getLastTrade());
         assertEquals(Trade.buyAt(1, NaN, NaN), record.getLastTrade(Trade.TradeType.BUY));
         assertEquals(Trade.sellAt(3, NaN, NaN), record.getLastTrade(Trade.TradeType.SELL));
@@ -79,7 +86,7 @@ public class TradingRecordTest {
         record.operate(5);
         assertTrue(record.getCurrentPosition().isOpened());
         assertEquals(1, record.getPositionCount());
-        assertEquals(new Position(Trade.buyAt(1, NaN, NaN), Trade.sellAt(3, NaN, NaN)), record.getLastPosition());
+        assertPositionsEqual(new Position(Trade.buyAt(1, NaN, NaN), Trade.sellAt(3, NaN, NaN)), record.getLastPosition());
         assertEquals(Trade.buyAt(5, NaN, NaN), record.getLastTrade());
         assertEquals(Trade.buyAt(5, NaN, NaN), record.getLastTrade(Trade.TradeType.BUY));
         assertEquals(Trade.sellAt(3, NaN, NaN), record.getLastTrade(Trade.TradeType.SELL));
@@ -104,8 +111,8 @@ public class TradingRecordTest {
     @Test
     public void getLastPosition() {
         assertNull(emptyRecord.getLastPosition());
-        assertEquals(new Position(Trade.buyAt(0, NaN, NaN), Trade.sellAt(3, NaN, NaN)), openedRecord.getLastPosition());
-        assertEquals(new Position(Trade.buyAt(7, NaN, NaN), Trade.sellAt(8, NaN, NaN)), closedRecord.getLastPosition());
+        assertPositionsEqual(new Position(Trade.buyAt(0, NaN, NaN), Trade.sellAt(3, NaN, NaN)), openedRecord.getLastPosition());
+        assertPositionsEqual(new Position(Trade.buyAt(7, NaN, NaN), Trade.sellAt(8, NaN, NaN)), closedRecord.getLastPosition());
     }
 
     @Test
