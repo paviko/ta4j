@@ -23,12 +23,14 @@
  */
 package org.ta4j.core.indicators;
 
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.Indicator;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.ta4j.core.BarSeries;
-import org.ta4j.core.Indicator;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Cached {@link Indicator indicator}.
@@ -51,6 +53,9 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
      * {@link #results}.
      */
     protected int highestResultIndex = -1;
+
+    /** ReadWriteLock for thread-safe access to cache */
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
      * Constructor.
@@ -79,7 +84,7 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
     protected abstract T calculate(int index);
 
     @Override
-    public synchronized T getValue(int index) {
+    public T getValue(int index) {
         BarSeries series = getBarSeries();
         if (series == null) {
             // Series is null; the indicator doesn't need cache.
@@ -99,43 +104,86 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
 
         T result;
         if (index < removedBarsCount) {
-            // Result already removed from cache
-            if (log.isTraceEnabled()) {
-                log.trace("{}: result from bar {} already removed from cache, use {}-th instead",
-                        getClass().getSimpleName(), index, removedBarsCount);
-            }
-            increaseLengthTo(removedBarsCount, maximumResultCount);
-            highestResultIndex = removedBarsCount;
-            result = results.get(0);
-            if (result == null) {
-                // It should be "result = calculate(removedBarsCount);".
-                // We use "result = calculate(0);" as a workaround
-                // to fix issue #120 (https://github.com/mdeverdelhan/ta4j/issues/120).
-                result = calculate(0);
-                results.set(0, result);
+            // Result already removed from cache - need write lock
+            lock.writeLock().lock();
+            try {
+                if (log.isTraceEnabled()) {
+                    log.trace("{}: result from bar {} already removed from cache, use {}-th instead",
+                            getClass().getSimpleName(), index, removedBarsCount);
+                }
+                increaseLengthTo(removedBarsCount, maximumResultCount);
+                highestResultIndex = removedBarsCount;
+                result = results.get(0);
+                if (result == null) {
+                    // It should be "result = calculate(removedBarsCount);".
+                    // We use "result = calculate(0);" as a workaround
+                    // to fix issue #120 (https://github.com/mdeverdelhan/ta4j/issues/120).
+                    result = calculate(0);
+                    results.set(0, result);
+                }
+            } finally {
+                lock.writeLock().unlock();
             }
         } else {
             if (index == series.getEndIndex()) {
                 // Don't cache result if last bar
                 result = calculate(index);
             } else {
-                increaseLengthTo(index, maximumResultCount);
-                if (index > highestResultIndex) {
-                    // Result not calculated yet
-                    highestResultIndex = index;
-                    result = calculate(index);
-                    results.set(results.size() - 1, result);
-                } else {
-                    // Result covered by current cache
-                    int resultInnerIndex = results.size() - 1 - (highestResultIndex - index);
-                    result = results.get(resultInnerIndex);
-                    if (result == null) {
+                // First try with read lock for the fast case where result is already cached
+                lock.readLock().lock();
+                try {
+                    if (index <= highestResultIndex && !results.isEmpty()) {
+                        // Result covered by current cache - fast path with read lock
+                        int resultInnerIndex = results.size() - 1 - (highestResultIndex - index);
+                        if (resultInnerIndex >= 0 && resultInnerIndex < results.size()) {
+                            result = results.get(resultInnerIndex);
+                            if (result != null) {
+                                // Cache hit - return immediately
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{}({}): {}", this, index, result);
+                                }
+                                return result;
+                            }
+                        }
+                    }
+                } finally {
+                    lock.readLock().unlock();
+                }
+
+                // Need to calculate or cache is not ready - use write lock
+                lock.writeLock().lock();
+                try {
+                    // Double-check pattern: another thread might have calculated the result
+                    if (index <= highestResultIndex && !results.isEmpty()) {
+                        int resultInnerIndex = results.size() - 1 - (highestResultIndex - index);
+                        if (resultInnerIndex >= 0 && resultInnerIndex < results.size()) {
+                            result = results.get(resultInnerIndex);
+                            if (result != null) {
+                                // Another thread calculated it while we were waiting
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{}({}): {}", this, index, result);
+                                }
+                                return result;
+                            }
+                        }
+                    }
+
+                    increaseLengthTo(index, maximumResultCount);
+                    if (index > highestResultIndex) {
+                        // Result not calculated yet
+                        highestResultIndex = index;
+                        result = calculate(index);
+                        results.set(results.size() - 1, result);
+                    } else {
+                        // Result covered by current cache but was null
+                        int resultInnerIndex = results.size() - 1 - (highestResultIndex - index);
                         result = calculate(index);
                         results.set(resultInnerIndex, result);
                     }
+                } finally {
+                    lock.writeLock().unlock();
                 }
             }
-
         }
         if (log.isTraceEnabled()) {
             log.trace("{}({}): {}", this, index, result);
