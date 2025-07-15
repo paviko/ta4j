@@ -23,6 +23,8 @@
  */
 package org.ta4j.core.indicators;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Indicator;
 
@@ -40,6 +42,8 @@ import org.ta4j.core.Indicator;
  * asked one is executed iteratively.
  */
 public abstract class RecursiveCachedIndicator<T> extends CachedIndicator<T> {
+
+    private static final Logger log = LoggerFactory.getLogger(RecursiveCachedIndicator.class);
 
     /**
      * The recursion threshold for which an iterative calculation is executed.
@@ -76,13 +80,23 @@ public abstract class RecursiveCachedIndicator<T> extends CachedIndicator<T> {
 
         // We're not at the end of the series yet.
         final int startIndex = Math.max(series.getRemovedBarsCount(), highestResultIndex);
+        final int gap = index - startIndex;
 
-        if (index - startIndex > RECURSION_THRESHOLD) {
+        if (gap > RECURSION_THRESHOLD) {
             // Too many uncalculated values; the risk for a StackOverflowError becomes high.
             // Calculating the previous values iteratively.
+            log.warn("Large gap detected in {}: gap={}, startIndex={}, targetIndex={}, threshold={}. Using iterative calculation to prevent StackOverflow.", 
+                this.getClass().getSimpleName(), gap, startIndex, index, RECURSION_THRESHOLD);
+            
             for (int prevIndex = startIndex; prevIndex < index; prevIndex++) {
                 super.getValue(prevIndex);
             }
+            
+            log.info("Iterative calculation completed for {} from {} to {}",
+                this.getClass().getSimpleName(), startIndex, index - 1);
+        } else if (gap > 50) {
+            log.info("Moderate gap in {}: gap={}, using normal recursive calculation",
+                this.getClass().getSimpleName(), gap);
         }
 
         return super.getValue(index);
