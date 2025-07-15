@@ -85,6 +85,9 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
 
     @Override
     public T getValue(int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException("Index cannot be negative: " + index);
+        }
         BarSeries series = getBarSeries();
         if (series == null) {
             // Series is null; the indicator doesn't need cache.
