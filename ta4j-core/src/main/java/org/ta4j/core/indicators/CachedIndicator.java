@@ -57,13 +57,27 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
     /** ReadWriteLock for thread-safe access to cache */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
+    /** Whether to cache the last bar value */
+    private final boolean cacheLastBar;
+
     /**
      * Constructor.
      *
      * @param series the bar series
      */
     protected CachedIndicator(BarSeries series) {
+        this(series, false);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param series the bar series
+     * @param cacheLastBar whether to cache the last bar value
+     */
+    protected CachedIndicator(BarSeries series, boolean cacheLastBar) {
         super(series);
+        this.cacheLastBar = cacheLastBar;
         int limit = series.getMaximumBarCount();
         this.results = limit == Integer.MAX_VALUE ? new ArrayList<>() : new ArrayList<>(limit);
     }
@@ -74,7 +88,17 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
      * @param indicator a related indicator (with a bar series)
      */
     protected CachedIndicator(Indicator<?> indicator) {
-        this(indicator.getBarSeries());
+        this(indicator.getBarSeries(), false);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param indicator a related indicator (with a bar series)
+     * @param cacheLastBar whether to cache the last bar value
+     */
+    protected CachedIndicator(Indicator<?> indicator, boolean cacheLastBar) {
+        this(indicator.getBarSeries(), cacheLastBar);
     }
 
     /**
@@ -128,8 +152,8 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
                 lock.writeLock().unlock();
             }
         } else {
-            if (index == series.getEndIndex()) {
-                // Don't cache result if last bar
+            if (index == series.getEndIndex() && !cacheLastBar) {
+                // Don't cache result if last bar (unless cacheLastBar is true)
                 result = calculate(index);
             } else {
                 // First try with read lock for the fast case where result is already cached

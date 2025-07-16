@@ -23,12 +23,12 @@
  */
 package org.ta4j.core.indicators.helpers;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-
 import org.ta4j.core.Indicator;
 import org.ta4j.core.indicators.CachedIndicator;
 import org.ta4j.core.num.Num;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 /**
  * Highest value indicator.
@@ -53,7 +53,18 @@ public class HighestValueIndicator extends CachedIndicator<Num> {
      * @param barCount  the time frame
      */
     public HighestValueIndicator(Indicator<Num> indicator, int barCount) {
-        super(indicator);
+        this(indicator, barCount, false);
+    }
+
+    /**
+     * Constructor.
+     * 
+     * @param indicator the {@link Indicator}
+     * @param barCount  the time frame
+     * @param cacheLastBar whether to cache the last bar value
+     */
+    public HighestValueIndicator(Indicator<Num> indicator, int barCount, boolean cacheLastBar) {
+        super(indicator, cacheLastBar);
         this.indicator = indicator;
         this.barCount = barCount;
     }

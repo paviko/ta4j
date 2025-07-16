@@ -42,7 +42,18 @@ public class MMAIndicator extends AbstractEMAIndicator {
      * @param barCount  the MMA time frame
      */
     public MMAIndicator(Indicator<Num> indicator, int barCount) {
-        super(indicator, barCount, 1.0 / barCount);
+        this(indicator, barCount, false);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param indicator the {@link Indicator}
+     * @param barCount  the MMA time frame
+     * @param cacheLastBar whether to cache the last bar value
+     */
+    public MMAIndicator(Indicator<Num> indicator, int barCount, boolean cacheLastBar) {
+        super(indicator, barCount, 1.0 / barCount, cacheLastBar);
     }
 
     @Override

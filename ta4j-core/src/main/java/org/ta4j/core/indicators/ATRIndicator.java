@@ -42,7 +42,18 @@ public class ATRIndicator extends AbstractIndicator<Num> {
      * @param barCount the time frame
      */
     public ATRIndicator(BarSeries series, int barCount) {
-        this(new TRIndicator(series), barCount);
+        this(new TRIndicator(series), barCount, false);
+    }
+
+    /**
+     * Constructor.
+     * 
+     * @param series   the bar series
+     * @param barCount the time frame
+     * @param cacheLastBar whether to cache the last bar value
+     */
+    public ATRIndicator(BarSeries series, int barCount, boolean cacheLastBar) {
+        this(new TRIndicator(series), barCount, cacheLastBar);
     }
 
     /**
@@ -52,9 +63,20 @@ public class ATRIndicator extends AbstractIndicator<Num> {
      * @param barCount the time frame
      */
     public ATRIndicator(TRIndicator tr, int barCount) {
+        this(tr, barCount, false);
+    }
+
+    /**
+     * Constructor.
+     * 
+     * @param tr       the {@link TRIndicator}
+     * @param barCount the time frame
+     * @param cacheLastBar whether to cache the last bar value
+     */
+    public ATRIndicator(TRIndicator tr, int barCount, boolean cacheLastBar) {
         super(tr.getBarSeries());
         this.trIndicator = tr;
-        this.averageTrueRangeIndicator = new MMAIndicator(tr, barCount);
+        this.averageTrueRangeIndicator = new MMAIndicator(tr, barCount, cacheLastBar);
     }
 
     @Override
