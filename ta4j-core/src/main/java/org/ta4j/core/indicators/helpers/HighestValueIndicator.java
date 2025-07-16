@@ -72,7 +72,7 @@ public class HighestValueIndicator extends CachedIndicator<Num> {
     @Override
     protected Num calculate(int index) {
         // Handle NaN case with recursive fallback (preserve original behavior)
-        if (indicator.getValue(index).isNaN() && barCount != 1) {
+        if (indicator.getValue(index).isNaN() && barCount != 1 && index > 0) {
             return new HighestValueIndicator(indicator, barCount - 1).getValue(index - 1);
         }
         
