@@ -57,8 +57,8 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
     /** ReadWriteLock for thread-safe access to cache */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    /** Whether to cache the last bar value */
-    private final boolean cacheLastBar;
+    /** Whether to skip lock mechanism */
+    private final boolean fullyPreInitialized;
 
     /**
      * Constructor.
@@ -73,11 +73,11 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
      * Constructor.
      *
      * @param series the bar series
-     * @param cacheLastBar whether to cache the last bar value
+     * @param fullyPreInitialized whether to cache the last bar value
      */
-    protected CachedIndicator(BarSeries series, boolean cacheLastBar) {
+    protected CachedIndicator(BarSeries series, boolean fullyPreInitialized) {
         super(series);
-        this.cacheLastBar = cacheLastBar;
+        this.fullyPreInitialized = fullyPreInitialized;
         int limit = series.getMaximumBarCount();
         this.results = limit == Integer.MAX_VALUE ? new ArrayList<>() : new ArrayList<>(limit);
     }
@@ -95,10 +95,10 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
      * Constructor.
      *
      * @param indicator a related indicator (with a bar series)
-     * @param cacheLastBar whether to cache the last bar value
+     * @param fullyPreInitialized whether to cache the last bar value
      */
-    protected CachedIndicator(Indicator<?> indicator, boolean cacheLastBar) {
-        this(indicator.getBarSeries(), cacheLastBar);
+    protected CachedIndicator(Indicator<?> indicator, boolean fullyPreInitialized) {
+        this(indicator.getBarSeries(), fullyPreInitialized);
     }
 
     /**
@@ -112,6 +112,16 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
         if (index < 0) {
             throw new IllegalArgumentException("Index cannot be negative: " + index);
         }
+        
+        // Simple implementation for fullyPreInitialized case
+        if (fullyPreInitialized && index < results.size()) {
+            T result = results.get(index);
+            if (log.isTraceEnabled()) {
+                log.trace("{}({}): {}", this, index, result);
+            }
+            return result;
+        }
+        
         BarSeries series = getBarSeries();
         if (series == null) {
             // Series is null; the indicator doesn't need cache.
@@ -152,8 +162,8 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
                 lock.writeLock().unlock();
             }
         } else {
-            if (index == series.getEndIndex() && !cacheLastBar) {
-                // Don't cache result if last bar (unless cacheLastBar is true)
+            if (index == series.getEndIndex() && !fullyPreInitialized) {
+                // Don't cache result if last bar (unless fullyPreInitialized is true)
                 result = calculate(index);
             } else {
                 // First try with read lock for the fast case where result is already cached

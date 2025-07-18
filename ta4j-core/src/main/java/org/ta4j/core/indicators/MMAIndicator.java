@@ -50,10 +50,10 @@ public class MMAIndicator extends AbstractEMAIndicator {
      *
      * @param indicator the {@link Indicator}
      * @param barCount  the MMA time frame
-     * @param cacheLastBar whether to cache the last bar value
+     * @param fullyPreInitialized whether to skip lock mechanism
      */
-    public MMAIndicator(Indicator<Num> indicator, int barCount, boolean cacheLastBar) {
-        super(indicator, barCount, 1.0 / barCount, cacheLastBar);
+    public MMAIndicator(Indicator<Num> indicator, int barCount, boolean fullyPreInitialized) {
+        super(indicator, barCount, 1.0 / barCount, fullyPreInitialized);
     }
 
     @Override

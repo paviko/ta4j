@@ -62,10 +62,10 @@ public abstract class RecursiveCachedIndicator<T> extends CachedIndicator<T> {
      * Constructor.
      *
      * @param series the bar series
-     * @param cacheLastBar whether to cache the last bar value
+     * @param fullyPreInitialized whether to skip lock mechanism
      */
-    protected RecursiveCachedIndicator(BarSeries series, boolean cacheLastBar) {
-        super(series, cacheLastBar);
+    protected RecursiveCachedIndicator(BarSeries series, boolean fullyPreInitialized) {
+        super(series, fullyPreInitialized);
     }
 
     /**
@@ -81,10 +81,10 @@ public abstract class RecursiveCachedIndicator<T> extends CachedIndicator<T> {
      * Constructor.
      *
      * @param indicator the indicator (with its bar series)
-     * @param cacheLastBar whether to cache the last bar value
+     * @param fullyPreInitialized whether to skip lock mechanism
      */
-    protected RecursiveCachedIndicator(Indicator<?> indicator, boolean cacheLastBar) {
-        this(indicator.getBarSeries(), cacheLastBar);
+    protected RecursiveCachedIndicator(Indicator<?> indicator, boolean fullyPreInitialized) {
+        this(indicator.getBarSeries(), fullyPreInitialized);
     }
 
     @Override

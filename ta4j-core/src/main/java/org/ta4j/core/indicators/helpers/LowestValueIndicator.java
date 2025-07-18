@@ -61,10 +61,10 @@ public class LowestValueIndicator extends CachedIndicator<Num> {
      * 
      * @param indicator the {@link Indicator}
      * @param barCount  the time frame
-     * @param cacheLastBar whether to cache the last bar value
+     * @param fullyPreInitialized whether to skip lock mechanism
      */
-    public LowestValueIndicator(Indicator<Num> indicator, int barCount, boolean cacheLastBar) {
-        super(indicator, cacheLastBar);
+    public LowestValueIndicator(Indicator<Num> indicator, int barCount, boolean fullyPreInitialized) {
+        super(indicator, fullyPreInitialized);
         this.indicator = indicator;
         this.barCount = barCount;
     }

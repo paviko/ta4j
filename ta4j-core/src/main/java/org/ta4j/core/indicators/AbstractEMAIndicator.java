@@ -52,10 +52,10 @@ public abstract class AbstractEMAIndicator extends RecursiveCachedIndicator<Num>
      * @param indicator  the {@link Indicator}
      * @param barCount   the time frame
      * @param multiplier the multiplier
-     * @param cacheLastBar whether to cache the last bar value
+     * @param fullyPreInitialized whether to skip lock mechanism
      */
-    protected AbstractEMAIndicator(Indicator<Num> indicator, int barCount, double multiplier, boolean cacheLastBar) {
-        super(indicator, cacheLastBar);
+    protected AbstractEMAIndicator(Indicator<Num> indicator, int barCount, double multiplier, boolean fullyPreInitialized) {
+        super(indicator, fullyPreInitialized);
         this.indicator = indicator;
         this.barCount = barCount;
         this.multiplier = numOf(multiplier);
