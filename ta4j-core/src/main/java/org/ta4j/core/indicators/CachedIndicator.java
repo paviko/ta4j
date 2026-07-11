@@ -107,6 +107,22 @@ public abstract class CachedIndicator<T> extends AbstractIndicator<T> {
      */
     protected abstract T calculate(int index);
 
+    /**
+     * Discards all memoized results so that subsequent {@link #getValue(int)} calls recompute via
+     * {@link #calculate(int)}. Subclasses whose {@link #calculate(int)} depends on mutable
+     * parameters must invalidate the cache after those parameters change, otherwise previously
+     * cached values (computed under the old parameters) would keep being returned. Thread-safe.
+     */
+    protected void clearCache() {
+        lock.writeLock().lock();
+        try {
+            results.clear();
+            highestResultIndex = -1;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
     @Override
     public T getValue(int index) {
         if (index < 0) {
